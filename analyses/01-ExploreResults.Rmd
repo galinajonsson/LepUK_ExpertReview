@@ -1,0 +1,650 @@
+---
+title: "ExOpVis"
+author: "Galina M. Jönsson"
+date: "04/04/2022"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+<br />
+
+## Introduction
+
+<br />
+The purpose of the expert review process is to determine whether the long-term resident butterfly trends produced by our occupancy model formulation are a plausible description of how species changed between 1900-1976, and reflects existing knowledge for species post-1976.
+<br />
+<br />
+The respondents completed an online questionnaire to assess each of 52 graphs depicting 52 species' annual occupancy across Great Britain from 1900 to 2016, having first read the Introduction text (**<span style="color: blue;">refer to where this can be found</span>**). Respondents were asked to separately score their level of agreement (on a five point scale) of two periods for each of the 52 species' plots: 1900-1976 and 1976-2016 (i.e., before and after UKBMS' standardized monitoring was initiated). We used a five point scale over a continuous score so that the results would be comparable across respondents. Respondents were instructed to indicate their agreement or disagreement that “the pre-1976 trend (including the uncertainty ribbon) is a plausible description of how this species changed since 1900”, and that "the post-1976 trend reflects existing knowledge for this species".
+<br />
+<br />
+Disagreement with an occupancy trend indicates that it is not a plausible description nor/or adequately reflect the evidence. 
+<br />
+The **ten** respondents scored both periods for each of 52 species' occupancy plots (i.e., 104 questions per respondent) for a total of 1,040 responses. These were coded from -2 (strongly disagree) to +2 (strongly agree).
+<br />
+```{r format-data, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+# Load required package(s)
+require(tidyr)
+require(dplyr)
+
+### Read first respondent results
+ex1 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp01/expertData__2022-03-22_app01.csv")
+# Add respondent ID number
+ex1$ID <- rep("01", 52)
+# pivot separate Q1 & Q2 result columns to a single column and an additional name indicating question number. Name data frame 'df'
+df <- ex1 %>% 
+  pivot_longer(
+    cols = starts_with("q")
+    )
+
+### Second respondent results
+ex2 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp02IK/expertData__2022-04-01_app02.csv")
+ex2$ID <- rep("02", 52)
+df <- rbind(df, (ex2 %>% # Row bind with 'df'
+                   pivot_longer(cols = starts_with("q"))))
+### Third respondent results
+ex3 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp03/expertData__2022-04-01_app03.csv")
+ex3$ID <- rep("03", 52)
+df <- rbind(df, (ex3 %>% pivot_longer(cols = starts_with("q"))))
+### Fourth respondent results
+ex4 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp04/expertData__2022-02-16_app04.csv")
+ex4$ID <- rep("04", 52)
+df <- rbind(df, (ex4 %>% pivot_longer(cols = starts_with("q"))))
+### Sixth respondent results
+ex6 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp06/expertData__2022-04-06_app06.csv")
+ex6$ID <- rep("05", 52)
+df <- rbind(df, (ex6 %>% pivot_longer(cols = starts_with("q"))))
+### Eighth respondent results
+ex8 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp08/expertData__2022-04-04_app08.csv")
+ex8$ID <- rep("06", 52)
+df <- rbind(df, (ex8 %>% pivot_longer(cols = starts_with("q"))))
+### Ninth respondent results
+ex09 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp09/expertData__2022-04-17_app09.csv")
+ex09$ID <- rep("07", 52)
+df <- rbind(df, (ex09 %>% pivot_longer(cols = starts_with("q"))))
+### Tenth respondent results
+ex10 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp10/expertData__2022-04-08_app10.csv")
+ex10$ID <- rep("08", 52)
+df <- rbind(df, (ex10 %>% pivot_longer(cols = starts_with("q"))))
+### Twelfth respondent results
+ex12 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp12/expertData__2022-04-01_app12.csv")
+ex12$ID <- rep("09", 52)
+df <- rbind(df, (ex12 %>% pivot_longer(cols = starts_with("q"))))
+### Thirteenth respondent results
+ex13 <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp13/expertData__2022-04-08_app13.csv")
+ex13$ID <- rep("10", 52)
+df <- rbind(df, (ex13 %>% pivot_longer(cols = starts_with("q"))))
+
+### re-code responses from -2 (strongly disagree) to +2 (strongly agree)
+df$value <- df$value-3
+
+### Enter whether species are HS or WCS
+MSI_lookup <- read.csv("../data/auxiliaryData/MSI_lookup.csv")
+df <- merge(df, MSI_lookup[, c("CommonName", "HS_WCS")], by.x = "com_name", by.y = "CommonName", all.x = TRUE, all.y = FALSE)
+# manually enter for species with differently spelled names
+df[df$com_name == "Brimstone", "HS_WCS"] <- "WCS"
+df[df$com_name == "Chalk Hill Blue", "HS_WCS"] <- "HS"
+df[df$com_name == "Green-veined White", "HS_WCS"] <- "WCS"
+df[df$com_name == "Large Heath", "HS_WCS"] <- "HS"
+df[df$com_name == "Orange-tip", "HS_WCS"] <- "WCS"
+df[df$com_name == "Pearl-bordered Fritillary", "HS_WCS"] <- "HS"
+df[df$com_name == "Silver-spotted Skipper", "HS_WCS"] <- "HS"
+df[df$com_name == "Silver-studded Blue", "HS_WCS"] <- "HS"
+df[df$com_name == "Silver-washed Fritillary", "HS_WCS"] <- "HS"
+df[df$com_name == "Small Mountain Ringlet", "HS_WCS"] <- "HS"
+df[df$com_name == "Small Pearl-bordered Fritillary", "HS_WCS"] <- "HS"
+df[df$com_name == "White-letter Hairstreak", "HS_WCS"] <- "WCS"
+```
+<br/>
+<br/>
+
+
+## Data Visualisation
+
+Next,we calculated the mean and variance for each respondent across questions (i.e. pre-1976 and post-1976) and species, as well as separately for each question (i.e. pre-1976 and post-1976) across the 52 species (Figure 1).
+<br/>
+<br/>
+<br/>
+```{r figure1, eval=TRUE, echo=FALSE, cache=TRUE, warning=FALSE, message=FALSE}
+# Load required package(s)
+require(tidyr)
+require(dplyr)
+require(ggplot2)
+
+df2 <- data.frame(ID = as.character(c("01", "02", "03", "04", "05", 
+                                      "06", "07", "08", "09", "10")),
+                  Mean_all = as.numeric(rep(NA, 10)),
+                  Variance_all = as.numeric(rep(NA, 10)),
+                  Mean_q1 = as.numeric(rep(NA, 10)),
+                  Variance_q1 = as.numeric(rep(NA, 10)),
+                  Mean_q2 = as.numeric(rep(NA, 10)),
+                  Variance_q2 = as.numeric(rep(NA, 10)))
+
+for(i in c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10")){
+  temp <- na.omit(subset(df[, c("ID", "name", "value")], ID == paste0(i)))
+  df2[df2$ID == paste0(i), "Mean_all"] <- mean(as.numeric(temp$value))
+  df2[df2$ID == paste0(i), "Variance_all"] <- var(as.numeric(temp$value))
+  df2[df2$ID == paste0(i), "Mean_q1"] <- mean(as.numeric(temp[temp$name == "q1",]$value))
+  df2[df2$ID == paste0(i), "Variance_q1"] <- var(as.numeric(temp[temp$name == "q1",]$value))
+  df2[df2$ID == paste0(i), "Mean_q2"] <- mean(as.numeric(temp[temp$name == "q2",]$value))
+  df2[df2$ID == paste0(i), "Variance_q2"] <- var(as.numeric(temp[temp$name == "q2",]$value))
+}
+
+#df3 <- as.data.frame(na.omit(df[, c("ID", "name", "value")]) %>% group_by(spp_name, name, HS_WCS) %>% summarise(Mean = mean(value), Unanimity = (1 - (var(value)))))
+
+# Define colour blind friendly palette
+cbPalette <- c("#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2")
+cbPalette <- c("#000000",  # "#999999", 
+               "#E69F00", "#009E73", "#66CC99",
+               "#F0E442","#56B4E9", "#0072B2",  "#9999CC",
+               "#CC79A7", "#D55E00", "#9E0142")
+
+
+### Graph
+ggplot(df2, aes(Mean_all, Variance_all), by = spp_name) +
+  geom_point(aes(Mean_all, Variance_all, colour=ID, shape="1900-2016"), size =3) +
+  geom_point(aes(Mean_q1, Variance_q1, colour=ID, shape="Pre-1976"), size =3.5) +
+  geom_point(aes(Mean_q2, Variance_q2, colour=ID, shape="Post-1976"), size =4.3) +
+  scale_color_manual(values=cbPalette) +
+  scale_shape_manual(name="",
+      values=c("1900-2016"=19, "Pre-1976"=17, "Post-1976"=18)) +
+  labs(x = "Mean",
+       y = "Variance",
+       color = "Rerspondent ID", 
+       title ="Figure 1: Mean scores against variance per respondent",
+       subtitle = "Summarised across species for both time periods separately and combined") +
+  theme(legend.key = element_rect(fill = "white", colour = NA)) +
+  theme(panel.background = element_rect(fill = "white", colour = "black")) +
+  guides(shape = guide_legend(order=1),
+         colour = guide_legend(order=2)) +
+  theme(text = element_text(size = 12))  
+```
+<br />
+<br />
+**General trends: Mean Scores**  
+
+* On average across species, all respondents score post-1976 trends (diamond) higher than pre-1976 trends (triangle). 
+* All but one respondents' (ID 09) mean score across the two time periods (circles) are greater than zero meaning that these respondents average scores were generally better than ‘Neither agree nor disagree’.<br/>
+* All respondents, on average, scored post-1976 trends above zero, indicating that generally, there is some level of agreement/plausibility for the late time period. <br/>
+* Three of ten respondents' mean scores for the 'pre-1976' periods (triangle) are negative (04, 09 and 10), i.e., no better than ‘Neither agree nor disagree’ and instead, more likely to be disagreed, than agreed, with.  <br/>
+    + One respondent (ID 09) stands out as scoring lower than others across all questions.<br/>
+<br/>   
+
+**General trends: Variance**  
+
+* The variance among scores for pre-1976 trends (triangle) are generally greater than for post-1976 trends (diamond). 
+* Most respondents' difference between pre-1976 trends' (triangle) and post-1976 trends' (diamond) score variances are around, or just above, 0.05; however, three respondents relative variance differences deviate from the generality. Namely, ID01, ID06 and ID10, whose answers tend to be more consistent/unanimous to questions on the later time series while answers for the early part of the time series vary more depending on species.<br/>
+<br />
+<br />
+<br />
+
+***
+Next, we also calculated the mean and variance for each species across respondents, and measured the unanimity across respondents as 1-variance (Figure 2).
+of the time series vary more depending on species.<br/>
+<br />
+<br />
+
+
+```{r figure2-3, eval=TRUE, echo=FALSE, cache=TRUE, warning=FALSE, message=FALSE}
+# Load required package(s)
+require(tidyr)
+require(dplyr)
+require(ggplot2)
+require(RColorBrewer)
+
+### Constraint Line
+constraintLine <- data.frame(nMax = as.numeric(0:10), nMin = as.numeric(10:0),
+                             mean = as.numeric(rep(NA, 11)), # To populate
+                             unanimity = as.numeric(rep(NA, 11))) # To populate
+# Loop through each row with number of possible extremes (2 or -2) 
+for(i in 1:nrow(constraintLine)){ # For each row, create a vector with ten (10) elements:
+  temp <- append(rep(-2, constraintLine$nMax[[i]]), # nMax times 2 ('Strongly agree')
+                 rep(2, constraintLine$nMin[[i]])) # nMin times -2 ('Strongly disagree')
+  constraintLine$mean[[i]] <- mean(temp) # Use vector to find mean
+  constraintLine$unanimity[[i]] <- 1-var(temp) # and unanimity
+}
+# constraintLine <- subset(constraintLine, mean>1.1)
+
+
+### Subset and summarise response data
+df3 <- as.data.frame(na.omit(df[, c("spp_name", "name", "value", "HS_WCS")]) %>% group_by(spp_name, name, HS_WCS) %>% summarise(Mean = mean(value), Unanimity = (1 - (var(value)))))
+
+
+### Graph
+ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
+  geom_line(aes(Mean, Unanimity, group = spp_name), df3, color="grey") + # Line between same species' time periods
+  geom_point(aes(Mean, Unanimity, group = name, shape=name, colour=name, fill=name), 
+             df3, size=3, position = "jitter") + 
+  geom_point(aes(df3[,c("Mean", "Unanimity", "HS_WCS")]$Mean, 
+                 df3[,c("Mean", "Unanimity", "HS_WCS")]$Unanimity, 
+                 shape=df3[,c("Mean", "Unanimity", "HS_WCS")]$HS_WCS, 
+                 col=df3[,c("Mean", "Unanimity", "HS_WCS")]$HS_WCS), size=2) + # Add shapes for WCSs & HSs
+  scale_shape_manual("", values=c(NA, 21, 25, 4),
+                     labels = c("", "Pre-1976", "Post-1976", "WCS")) +
+  scale_colour_manual("", values=c(NA, "gray45","gray45", "black"),
+                      labels = c("", "Pre-1976", "Post-1976", "WCS")) +
+  scale_fill_manual("", values=c("#74A089", "#F5CDB4"),
+                    labels = c("Pre-1976", "Post-1976")) +
+  labs(x = "Mean Score", y = "Unanimity",
+       title ="Figure 2: Mean scores against unanimity (1- variance)") +
+  theme(legend.key = element_rect(fill = "white", color = NA)) +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  guides(color=guide_legend(""), fill = FALSE) +
+  coord_cartesian(ylim=c(-1.6, 1)) +
+  geom_line(aes(mean, unanimity), constraintLine) + # Add constraint line
+  guides(colour = guide_legend(override.aes = list(shape = c(NA, 21, 25, 4), # Manually make legend (without black boarders)
+                                                   fill=c(NA, "#74A089", "#F5CDB4", "black"),
+                                                   colour=c(NA, "#74A089", "#F5CDB4", "black")))) +
+  theme(text = element_text(size = 12))   
+
+
+
+### Bums... to facetwrap I'll need to restructure the df 
+# Separate into two dfs
+df3mean <- df3[,c("spp_name", "name", "Mean")]
+# New column indicating score ID
+df3mean$Difference <- 'Mean Scores'
+# Rename "Mean_diff" column to identical as Unanimity df (below)
+names(df3mean)[names(df3mean) == "Mean"] <- "value"
+### Repeat for Unanimity
+df3unanimity <- df3[,c("spp_name", "name", "Unanimity")]  
+df3unanimity$Difference <- 'Unanimity'
+names(df3unanimity)[names(df3unanimity) == "Unanimity"] <- "value"
+
+# combine the two data frames
+df3b <- rbind(df3mean, df3unanimity)
+
+names(df3b)[names(df3b) == "name"] <- "period"
+
+df3b[df3b$period=="q1", "period"] <- "Pre-1976"
+df3b[df3b$period=="q2", "period"] <- "Post-1976"
+  
+ggplot(df3b, aes(value, group = spp_name)) + geom_histogram(bins = 15, aes(fill = spp_name))  + 
+  facet_grid(period ~ Difference ) +
+  #facet_wrap(~ Difference) +
+  labs(x = "Score", y = "Count",
+       title ="Figure 3: Mean scores and unanimity scores by time period",
+       subtitle = "Coloured by species (pretty ugly btf...)") +
+  theme(legend.key = element_rect(fill = "white", color = NA)) +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  theme(legend.position="none") +
+  scale_fill_hue(c=45, l=80) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+  theme(text = element_text(size = 12))  
+```
+<br />
+<br />
+<br />
+<br />
+<br />
+**General trends:**  
+
+* 16 of the 104 questions have a mean score of zero or lower meaning that the respondents average score was no better than ‘Neither agree nor disagree’. 
+    + 15 of the 16 were 'pre-1976'-questions; only 1 concerned the post-1976 time period, specifically, *Polyommatus coridon*  (i.e., Chalk Hill Blue). <br/>
+    + Ten and six questions concerned WCSs and HSs, respectively.<br />
+* Five species' time periods on the top left-hand side of Figure 2 have a mean score of -1 or lower and high unanimity scores indicating low divergence of opinion among respondents. These are all WSCs, specifically: <br />
+    1. Small Tortoiseshell (*Aglais urticae*) <br/>
+    2. Green-veined White (*Pieris napi*) <br/>
+    3. Small White (*Pieris rapae*) <br/>
+    4. Common Blue (*Polyommatus icarus*) <br/>
+    5. Meadow Brown (*Maniola jurtina*) <br/>
+<br/>
+* As for the criterion/cut off point beyond which we won't include model outputs: Instead of discarding, let's say, species' model outputs with mean scores of -1 or less, perhaps a 'stronger' way of presenting it would be to say e.g.:
+    + First, all species' model outputs with a mean agreement score of less than 0 are **considered** for exclusion (because these indicate trends worse than ‘Neither agree nor disagree’). <br/>
+    + Second, we only discard species/model outputs when there is high unanimity among respondents (because this is strong evidence for something being wrong; however, if unanimity is low although the mean score falls below 0, most respondents may have answered 'Disagree', whilst the one-two expert(s) on that specific species answered 'Strongly agree'). 
+<br/>
+<br/>
+<br/>
+
+*** 
+Next, we investigate whether there is evidence suggesting that some species' trends are easier to model for both time periods, the early or the late period by visualising the distance between each species' late- and early period mean scores, as well as unanimity scores. 
+<br/>
+<br/>
+<br/>
+```{r figure4a, eval=TRUE, echo=FALSE, cache=TRUE}
+# Load required package(s)
+require(dplyr)
+require(ggplot2)
+
+# Vectorise species' names
+spp <- as.factor(unique(df3$spp_name))
+
+# Empty data frame to populate
+df4 <- data.frame(spp_name = spp,
+                  Mean_diff = as.numeric(rep(NA, 52)),
+                  Unanimity_diff = as.numeric(rep(NA, 52)))
+
+# Loop through species and subtract post-1976 scores from pre-1976 scores
+for(i in 1:length(spp)){
+  temp <- df3[df3$spp_name == paste0(spp[i]), ]
+  df4[df4$spp_name == paste0(spp[i]), "Mean_diff"] <- ((temp[temp$name == "q1",]$Mean) - (temp[temp$name == "q2",]$Mean))
+  df4[df4$spp_name == paste0(spp[i]), "Unanimity_diff"] <- ((temp[temp$name == "q1",]$Unanimity) - (temp[temp$name == "q2",]$Unanimity))
+}
+
+### Bums... to facetwrap I'll need to restructure the df 
+# Separate into two dfs
+df4mean <- df4[,c("spp_name", "Mean_diff")]
+# New column indicating score ID
+df4mean$Difference <- 'Mean Agreement'
+# Rename "Mean_diff" column to identical as Unanimity df (below)
+names(df4mean)[names(df4mean) == "Mean_diff"] <- "value"
+### Repeat for Unanimity
+df4unanimity <- df4[,c("spp_name", "Unanimity_diff")]
+df4unanimity$Difference <- 'Unanimity'
+names(df4unanimity)[names(df4unanimity) == "Unanimity_diff"] <- "value"
+
+# combine the two data frames
+df4 <- rbind(df4mean, df4unanimity)
+  
+ggplot(df4, aes(value, group = spp_name)) + geom_histogram(bins = 15, aes(fill = spp_name))  + 
+  facet_wrap(~ Difference) +
+  labs(x = "Score", y = "Count",
+       title ="Figure 4: Distance between pre-1976 vs. post-1976 scores",
+       subtitle = "Coloured by species (pretty ugly...)") +
+  theme(legend.key = element_rect(fill = "white", color = NA)) +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  theme(legend.position="none") +
+  scale_fill_hue(c=45, l=80) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+  theme(text = element_text(size = 12))  
+```
+
+
+```{r figure4b, eval=TRUE, echo=TRUE, cache=TRUE}
+head(df4mean[order(df4mean$value, decreasing = TRUE), ])
+tail(df4mean[order(df4mean$value, decreasing = TRUE), ])
+head(df4unanimity[order(df4unanimity$value, decreasing = TRUE), ])
+tail(df4unanimity[order(df4unanimity$value, decreasing = TRUE), ])
+```
+
+<br />
+<br />
+**General trends:**  
+
+* Nearly all 'approval' and unanimity scores are higher for post-1976 trends compared to pre-1976 trends. 
+* The mean themselves are not bell curved but we can see that the difference between points is! EXCEPT for the few species to the right 
+
+**<span style="color: red;">Galina: Finish text and tidy head&tail tables</span>**
+
+***
+Before moving on to the next step, we remind ourselves what the plots for the five most poorly rated species' trends look like
+```{r figure5, eval=FALSE, echo=FALSE, cache=TRUE, message=FALSE}
+# Load required package(s)
+require(png)
+# Load png picture files
+A_urticae <- readPNG(source="../app_ExpertReviewForm/app_ExpertReviewForm/data/Aglais.urticae.png")
+P_napi <- readPNG(source="../app_ExpertReviewForm/app_ExpertReviewForm/data/Pieris.napi.png")
+P_rapae <- readPNG(source="../app_ExpertReviewForm/app_ExpertReviewForm/data/Pieris.rapae.png")
+P_icarus <- readPNG(source="../app_ExpertReviewForm/app_ExpertReviewForm/data/Polyommatus.icarus.png")
+M_jurtina <- readPNG(source="../app_ExpertReviewForm/app_ExpertReviewForm/data/Maniola.jurtina.png")
+
+# create empty plot
+plot(NA, xlim = c(0, 2.4), ylim = c(0, 5.5), main="Figure 5: Occupancy plots for the species with least plausible trends 1900-1976 ", cex.main=1, type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "")
+#Populate with png pics
+rasterImage(A_urticae, 0, 3, 0.8, 5.5)
+rasterImage(P_napi, 0.8, 3, 1.6, 5.5)
+rasterImage(P_rapae, 1.6, 3, 2.4, 5.5)
+rasterImage(P_icarus, 0, 0, 0.8, 2.5)
+rasterImage(M_jurtina, 0.8, 0, 1.6, 2.5)
+#add text
+text(0.45,5.4, "Aglais urticae", cex=0.9, col="black", font = 3)
+text(1.25,5.4, "Pieris napi", cex=0.9, col="black", font = 3)
+text(2.05,5.4, "Pieris rapae", cex=0.9, col="black", font = 3)
+text(0.45,2.5, "Polyommatus icarus", cex=0.9, col="black", font = 3)
+text(1.25,2.5, "Maniola jurtina", cex=0.9, col="black", font = 3)
+```
+<br/>
+Yes, confirmed. They look off. 
+
+
+*** 
+Let's take a closer look at the species with low unanimity indicating high divergence of opinion among respondents to potentially find whether it's driven by one respondent's answer (and could be a potential outlier/mistake to follow up on) or 'genuine' disagreement among the participants. 
+<br/>
+
+We use a box plot to visualise the distribution of scores for species and time period combinations where the unanimity score is less than zero, only including combinations with outliers to more easily see the most extreme cases (Figure 5). Combinations without outliers are discarded as 'genuine' disagreement among the participants.   
+<br/>
+<br/>
+<br/>
+```{r figure6, eval=TRUE, echo=FALSE, cache=TRUE}
+# Load required package(s)
+require(tidyr)
+require(dplyr)
+require(ggplot2)
+
+# Subset species' periods where unanimity scores are less than 0
+df5lookup <- subset(df3, Unanimity < 0)
+df5lookup$lookup <- paste0(df5lookup$spp_name, "_", df5lookup$name)
+
+
+### Subset and summarise response data
+df5 <- na.omit(df[, c("spp_name", "name", "value", "HS_WCS")])
+df5$lookup <- paste0(df5$spp_name, "_", df5$name)
+df5 <- df5[df5$lookup %in% df5lookup$lookup, ]
+df5[df5$name=="q1", "name"] <- "Pre1976"
+df5[df5$name=="q2", "name"] <- "Post1976"
+df5$lookup <- paste0(df5$spp_name, "_", df5$name)
+
+
+#df5 %>% 
+#  ggplot(aes(x=lookup, y=value)) +
+#  geom_boxplot(outlier.colour = "red") +
+#  labs(x = "Species & time period", y = "Agreement Scores",
+#       title ="Figure 4: Distribution of scores",
+#       subtitle = "For species and time periods where unanimity is less than 0") +
+#  theme(panel.background=element_rect(fill="white", colour="black")) +
+#  coord_flip() +
+#  theme(text = element_text(size = 12)) 
+
+
+df6<-df5[!(df5$lookup=="Satyrium.w-album_Post1976" | 
+             df5$lookup=="Pyrgus.malvae_Post1976" | 
+             df5$lookup=="Polyommatus.icarus_Post1976" | 
+             df5$lookup=="Polyommatus.coridon_Pre1976" | 
+             df5$lookup=="Polyommatus.coridon_Post1976" | 
+             df5$lookup=="Plebejus.argus_Pre1976" | 
+             df5$lookup=="Melitaea.cinxia_Pre1976"|
+             df5$lookup=="Lycaena.phlaeas_Post1976" | 
+             df5$lookup=="Limenitis.camilla_Post1976" | 
+             df5$lookup=="Hipparchia.semele_Post1976" | 
+             df5$lookup=="Euphydryas.aurinia_Pre1976" | 
+             df5$lookup=="Euphydryas.aurinia_Post1976" | 
+             df5$lookup=="Erebia.epiphron_Pre1976" | 
+             df5$lookup=="Callophrys.rubi_Post1976" | 
+             df5$lookup=="Boloria.selene_Pre1976" | 
+             df5$lookup=="Aglais.io_Pre1976"),]
+
+
+df6 %>% 
+  ggplot(aes(x=lookup, y=value)) +
+  geom_boxplot(outlier.colour = "red") +
+  labs(x = "Species & time period", y = "Agreement Scores",
+       title ="Figure 6: Distribution of scores",
+       subtitle = "For species and time periods with unanimity<0 and outliers ") +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  coord_flip() +
+  theme(text = element_text(size = 12)) 
+```
+<br />
+<br />
+The following six species:time period combinations stand out:
+
+* Thymelicus.lineola_Pre1976: 
+    + -2 'Strongly disagree' (ID10) <br/>
+* Plebejus.argus_Post1976: 
+    + -2 'Strongly disagree' (ID09) <br/>
+* Melitaea.athalia_Post1976: 
+    + -2 'Strongly disagree' (ID09) <br/>
+* Erynnis.tages_Post1976: 
+    + -2 'Strongly disagree' (ID09) <br/>
+* Celastrina.argiolus_Post1976: 
+    + -2 'Strongly disagree' (ID05) <br/>
+* Anthocharis.cardamines_Pre1976: 
+    + -2 'Strongly disagree' (ID04) <br/>
+
+Three of six 'extremes' are driven by participant ID 09, who stands out as scoring lower than others across all questions (Figure 1) and we therefore expect these to be 'genuine'. The remaining three 'extremes' are responses by three separate participants (04, 05 and 10), neither of which clearly stands out from participants (Figure 1). To investigate whether these may be genuine mistakes, we use a modelling approach (see next sub-section).
+
+<br />
+<br />
+<br />
+<br />
+<br />
+<br />
+
+## Modelling
+
+<br />
+We use mixed effects models to seek more definitive answers to the questions above figures suggest. 
+
+### Model Selection
+
+First, we fit two models with identical fixed and random effect structures, but different distributions
+(Normal (Gaussian)) and Poisson, and determine which distribution family best explains the data distribution.   
+
+<br />
+```{r generate-models, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+# Load required package(s)
+require(lme4)
+
+# First we give the raw data frame more informative names
+df <- na.omit(df[, c("spp_name", "ID", "name", "value", "HS_WCS")])
+colnames(df) <- c("spp_name", "ID", "period", "score", "HS_WCS")
+df[df$period=="q1", "period"] <- "Pre1976"
+df[df$period=="q2", "period"] <- "Post1976"
+
+### re-code responses back to 1-5 scale (Poisson cannot handle negative values)
+df$score <- df$score+3
+
+### generate models with same random effect structure but different distributions
+# Normal (Gaussian) 
+lmerNormal <- lmer(score ~ period + (1|spp_name) + (1|ID), data = df)
+# Poisson
+glmerPoisson <- glmer(score ~ period + (1|spp_name) + (1|ID), 
+                      data = df, family = poisson)
+
+# compare models
+anova(glmerPoisson, lmerNormal, test = "Chisq")
+```
+<br/>
+<br/>
+<br/>
+The model comparison shows that the normal (Gaussian) model has a significantly better fit to the data compared with the Poisson model because:
+
+* AIC decreases
+* BIC decreases
+* The p-value << 0.05
+<br/>
+
+### Time period (fixed) effect
+
+We will therefore continue with the normal (Gaussian) model. First, we  re-code response scores back to the -2 to 2 scale because normal (Gaussian) models can handle negative values whilst Poisson's cannot. We'll then inspect the model output, test whether the fixed effect is significant (i.e. whether scores for the two time periods differ) and plot the results. 
+<br/>
+```{r test-fixed-effect-plot6, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+# Load required package(s)
+require(lme4)
+require(glmmTMB)
+require(car)
+require(effects)
+
+#re-code responses back to 1-5 scale
+df$score <- df$score-3
+
+# Re-generate the Normal (Gaussian) models with sre-coded scores
+lmerNormal <- lmer(score ~ period + (1|spp_name) + (1|ID), data = df)
+
+# inspect results
+summary(lmerNormal)
+car::Anova(lmerNormal)
+
+# Plot results
+effects_ok <- (requireNamespace("effects") && getRversion() >= "3.6.0")
+if (effects_ok) {
+plot(allEffects(lmerNormal) )
+}
+```
+<br/>
+<br/>
+The type II Wald chisquare test shows that scores for Pre-1976 trends are significantly lower than post-1976 scores: on average, pre-1976 trends' scores are 0.70428 lower than post-1976. Plots and error bars agree. We now look into a few different model diagnostics to decipher what's up with our random effect. 
+<br/>
+<br/>
+
+### Participant and species ID (random) effects
+
+
+**Useful recources:**
+* https://slcladal.github.io/regression.html#2_Mixed-Effects_Regression  
+* **<span style="color: red;">Galina: Add book title and section</span>**
+
+First, we generate diagnostic plots that focus on the random effect structure.
+
+```{r diagnostics1, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+require(ggplot2)
+require(lattice)
+
+# "Draw quantile-Quantile plots of a sample against a theoretical distribution, possibly conditioned on other variables."
+
+# Generate random effects
+rr1 <- ranef(lmerNormal)
+par(mfrow=c(2,2))
+dotplot(rr1)  ## default
+qqmath(rr1)
+```
+<br />
+<br />
+<br />
+**General trends:**  
+
+* There appear to be differences among both participants and species. 
+    + *Participants*: Two extremes are 09 and 06, which tend to score low and high, respectively, accross species and time series. <br/>
+    + *Species*: also look as if some are generally 'easier', whilst others are 'hard', to model for both time periods as evident from some scoring high and other low accross periods and participants. WHich are admittedly hard to see on these plots so let's move on. <br/>
+
+***
+
+<br/>
+<br/>
+```{r diagnostics2, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+plot(lmerNormal, ID ~ resid(.), abline = 0, 
+     ylab ="Participant ID", xlab = "Residuals") # generate diagnostic plots
+plot(lmerNormal, spp_name ~ resid(.), abline = 0, 
+     ylab ="Species", xlab = "Residuals") # generate diagnostic plots
+```
+<br/>
+<br/>
+The plots show that there are some outliers (points outside the boxes) and that the variability differs between both participants and species; we therefore examine both participants' and species' standardized residuals (or Pearson’s residuals) versus fitted values in isolation.
+
+* Note the -3 residual for participant 05 (suspected mistake; Figure 5). 
+* Neither participant 04 nor 10 (also suspected mistakes; Figure 5) look like they have 'extreme' residuals. <br/>
+
+***
+
+<br/>
+
+
+```{r diagnostics3, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+
+plot(lmerNormal, resid(., type = "pearson") ~ fitted(.) | ID, id = 0.05, 
+     adj = -0.3, pch = 20, col = "gray40", 
+     ylab ="Standardized (Pearson’s) Residuals", xlab = "Fitted Values")
+plot(lmerNormal, resid(., type = "pearson") ~ fitted(.) | spp_name, id = 0.05, 
+     adj = -0.3, pch = 20, col = "gray40", 
+     ylab ="Standardized (Pearson’s) Residuals", xlab = "Fitted Values")
+```
+
+<br/>
+<br/>
+
+
+The plots show the standardized residuals (or Pearson’s residuals) versus fitted values and suggests that there are outliers in the data (the names elements in the plots; admittedly, this is rather hard to see for the species).
+
+
+***
+
+
+
+
+<br/>
+<br/>
+
+
+
+
