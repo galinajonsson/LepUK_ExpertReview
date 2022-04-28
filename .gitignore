@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 # .DS_Store
 .DS_Store
 
+=======
+>>>>>>> 194a7f85b6df87137fcfdc2e043af9e87819df80
 # Folders for resources (documents) and ethics board application
 Resources/*
 EthicsBoardApplication/*
