@@ -1,3 +1,26 @@
+# Folders for resources (documents) and ethics board application
+Resources/*
+EthicsBoardApplication/*
+
+# Folder with all individual participant apps
+ParticipantApps/*
+
+# the data files
+*.csv
+*RData
+
+# The R project file
+*.Rproj
+
+# the plots used for apps
+*.png
+
+# the knitted html files and associated folders
+*.html
+ExOpVis.log*
+ExOpVis.tex*
+ExOpVis_files/*
+
 # History files
 .Rhistory
 .Rapp.history
@@ -37,3 +60,5 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+.secrets
+
