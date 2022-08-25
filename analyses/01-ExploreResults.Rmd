@@ -142,18 +142,19 @@ df2 <- as.data.frame(na.omit(df[, c("ID", "name", "value")]) %>% group_by(ID, na
 
 # Define colour blind friendly palette
 cbPalette <- c("#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2")
-cbPalette <- c("#000000",  # "#999999", 
-               "#E69F00", "#009E73", "#66CC99",
+cbPalette <- c(#"#000000",  # "#999999", 
+               "grey36", "#E69F00", "#009E73", "#66CC99",
                "#F0E442","#56B4E9", "#0072B2",  "#9999CC",
-               "#CC79A7", "#D55E00", "#9E0142")
+               "#CC79A7", "#D55E00") # , "#9E0142")
 
 
 ### Graph
 ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
   geom_line(aes(Mean, Variance, group = ID), df2, color="grey") + # Line between same species' time periods
-  geom_point(aes(Mean, Variance, group = name, shape=name, colour=ID), 
-             df2, size=3.5, position = "jitter") + 
-  scale_shape_manual(name="Time Period", values=c(17,19),
+  geom_point(aes(Mean, Variance, shape=name, size=name, colour=ID), 
+             df2, size=4.5, position = "jitter") + 
+  scale_shape_manual(name="\n  Time Period", 
+                     values=c(18,20), 
                      labels = c("1900-1976", "1976-2016")) +
   scale_colour_manual(name="Participant ID", values=cbPalette) +
   labs(x = "Mean",
@@ -162,8 +163,11 @@ ggplot() + # Empty ggplot function to allow use of different data sets for plott
        #subtitle = "Summarised across species for both time periods separately and combined") +
   theme(legend.key = element_rect(fill = "white", colour = NA)) +
   theme(panel.background = element_rect(fill = "white", colour = "black")) +
-  guides(shape = guide_legend(order=1),
+  guides(size = "none",
+         shape = guide_legend(order=1),
          colour = guide_legend(order=2)) +
+    guides(colour = guide_legend(override.aes = list(shape = c(15,15,15,15,15,15,15,15,15,15),
+                                                     size = 3.7))) + 
   theme(text = element_text(size = 14))
 ```
 
@@ -183,8 +187,8 @@ df_plot <- df %>% mutate(response =
 )
 
 names(df_plot)[names(df_plot) == "name"] <- "Period"
-df_plot[df_plot$Period=="q1", "Period"] <- "Pre-1976"
-df_plot[df_plot$Period=="q2", "Period"] <- "Post-1976"
+df_plot[df_plot$Period=="q1", "Period"] <- "1900-1976"
+df_plot[df_plot$Period=="q2", "Period"] <- "1976-2016"
 
 df_plot_wide <- df_plot %>%
 	group_by(Period, response) %>%  # grouping by these two variables
@@ -231,10 +235,10 @@ ggplot() +
 	coord_flip() +
 	labs(x = "Time Period", 
 	     y = "Percentage of answers (%)",
-       fill = "Response", 
-       title ="Figure 2: Distribution of responses across species and participants") +
+       fill = "Response") +
+       #title ="Figure 2: Distribution of responses across species and participants") +
 	theme_classic() +
-  theme(text = element_text(size = 12)) 
+  theme(text = element_text(size = 14)) 
 ```
 <br/>
 <br/>
@@ -286,33 +290,23 @@ for(i in 1:nrow(constraintLine)){ # For each row, create a vector with ten (10) 
 ### Subset and summarise response data
 df3 <- as.data.frame(na.omit(df[, c("spp_name", "name", "value", "HS_WCS")]) %>% group_by(spp_name, name, HS_WCS) %>% summarise(Mean = mean(value), Unanimity = (1 - (var(value)))))
 
+cols <- c("#E69F00", "#009E73")
 
 ### Graph
-ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
-  geom_line(aes(Mean, Unanimity, group = spp_name), df3, color="grey") + # Line between same species' time periods
-  geom_point(aes(Mean, Unanimity, group = name, shape=name, colour=name, fill=name), 
-             df3, size=3, position = "jitter") + 
-  geom_point(aes(df3[,c("Mean", "Unanimity", "HS_WCS")]$Mean, 
-                 df3[,c("Mean", "Unanimity", "HS_WCS")]$Unanimity, 
-                 shape=df3[,c("Mean", "Unanimity", "HS_WCS")]$HS_WCS, 
-                 col=df3[,c("Mean", "Unanimity", "HS_WCS")]$HS_WCS), size=2) + # Add shapes for WCSs & HSs
-  scale_shape_manual("", values=c(NA, 21, 25, 4),
-                     labels = c("", "Pre-1976", "Post-1976", "WCS")) +
-  scale_colour_manual("", values=c(NA, "gray45","gray45", "black"),
-                      labels = c("", "Pre-1976", "Post-1976", "WCS")) +
-  scale_fill_manual("", values=c("#74A089", "#F5CDB4"),
-                    labels = c("Pre-1976", "Post-1976")) +
-  labs(x = "Mean Score", y = "Unanimity",
-       title ="Figure 3: Mean scores against unanimity (1- variance)") +
+ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of different data sets for plotting 
+  geom_line(aes(group = spp_name), color="grey") + # Line between same species' time periods
+  geom_jitter(width = 0.04, height = 0.04, aes(group = name, shape=name, colour=name), size=3.5) + # use jitter over geom_points to reveal overlapping points
+  geom_line(aes(mean, unanimity), constraintLine) + # Add constraint line
+  scale_shape_manual("Time Period", values=c(15, 17),
+                     labels = c("1900-1976", "1976-2016")) +
+  scale_colour_manual("Time Period", values=cols,
+                      labels = c("1900-1976", "1976-2016")) +
+  labs(x = "Mean Score", y = "Unanimity") +
+  #     title ="Figure 3: Mean scores against unanimity (1- variance)") +
   theme(legend.key = element_rect(fill = "white", color = NA)) +
   theme(panel.background=element_rect(fill="white", colour="black")) +
-  guides(color=guide_legend(""), fill = FALSE) +
   coord_cartesian(ylim=c(-1.6, 1)) +
-  geom_line(aes(mean, unanimity), constraintLine) + # Add constraint line
-  guides(colour = guide_legend(override.aes = list(shape = c(NA, 21, 25, 4), # Manually make legend (without black boarders)
-                                                   fill=c(NA, "#74A089", "#F5CDB4", "black"),
-                                                   colour=c(NA, "#74A089", "#F5CDB4", "black")))) +
-  theme(text = element_text(size = 12))   
+  theme(text = element_text(size = 14))   
 ```
 <br/>
 <br/>
@@ -330,7 +324,7 @@ df3 <- as.data.frame(na.omit(df[, c("spp_name", "name", "value", "HS_WCS")]) %>%
 # Separate into two dfs
 df3mean <- df3[,c("spp_name", "name", "Mean")]
 # New column indicating score ID
-df3mean$Difference <- 'Mean Scores'
+df3mean$Difference <- 'Mean'
 # Rename "Mean_diff" column to identical as Unanimity df (below)
 names(df3mean)[names(df3mean) == "Mean"] <- "value"
 ### Repeat for Unanimity
@@ -343,8 +337,8 @@ df3b <- rbind(df3mean, df3unanimity)
 
 names(df3b)[names(df3b) == "name"] <- "period"
 
-df3b[df3b$period=="q1", "period"] <- "Pre-1976"
-df3b[df3b$period=="q2", "period"] <- "Post-1976"
+df3b[df3b$period=="q1", "period"] <- "1900-1976"
+df3b[df3b$period=="q2", "period"] <- "1976-2016"
   
 ggplot(df3b, aes(value, group = spp_name)) + geom_histogram(bins = 15, aes(fill = spp_name))  + 
   facet_grid(period ~ Difference ) +
@@ -358,6 +352,20 @@ ggplot(df3b, aes(value, group = spp_name)) + geom_histogram(bins = 15, aes(fill 
   scale_fill_hue(c=45, l=80) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
   theme(text = element_text(size = 12))  
+
+
+
+ggplot(df3b, aes(value, group = spp_name)) + geom_histogram(bins = 15)  + 
+  facet_grid(period ~ Difference ) +
+  #facet_wrap(~ Difference) +
+  labs(x = "Score", y = "Species") +
+   #    title ="Figure 4: Mean scores and unanimity scores by time period") +
+  theme(legend.key = element_rect(fill = "white", color = NA)) +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  theme(legend.position="none") +
+  scale_fill_hue(c=45, l=80) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+  theme(text = element_text(size = 14))  
 ```
 <br />
 <br />
@@ -398,6 +406,7 @@ spp <- as.factor(unique(df3$spp_name))
 
 # Empty data frame to populate
 df4 <- data.frame(spp_name = spp,
+                  name = as.character(rep("Difference"), 52),
                   Mean_diff = as.numeric(rep(NA, 52)),
                   Unanimity_diff = as.numeric(rep(NA, 52)))
 
@@ -408,32 +417,38 @@ for(i in 1:length(spp)){
   df4[df4$spp_name == paste0(spp[i]), "Unanimity_diff"] <- ((temp[temp$name == "q1",]$Unanimity) - (temp[temp$name == "q2",]$Unanimity))
 }
 
-### Bums... to facetwrap I'll need to restructure the df 
+### To facetwrap I'll need to restructure the df 
 # Separate into two dfs
-df4mean <- df4[,c("spp_name", "Mean_diff")]
+df4mean <- df4[,c("spp_name", "name", "Mean_diff")]
 # New column indicating score ID
-df4mean$Difference <- 'Mean Agreement'
+df4mean$Difference <- 'Mean'
 # Rename "Mean_diff" column to identical as Unanimity df (below)
 names(df4mean)[names(df4mean) == "Mean_diff"] <- "value"
 ### Repeat for Unanimity
-df4unanimity <- df4[,c("spp_name", "Unanimity_diff")]
+df4unanimity <- df4[,c("spp_name", "name", "Unanimity_diff")]
 df4unanimity$Difference <- 'Unanimity'
 names(df4unanimity)[names(df4unanimity) == "Unanimity_diff"] <- "value"
 
 # combine the two data frames
 df4 <- rbind(df4mean, df4unanimity)
-  
-ggplot(df4, aes(value, group = spp_name)) + geom_histogram(bins = 15, aes(fill = spp_name))  + 
-  facet_wrap(~ Difference) +
-  labs(x = "Score", y = "Count",
-       title ="Figure 5: Distance between pre-1976 vs. post-1976 scores",
-       subtitle = "Coloured by species (pretty ugly...)") +
+names(df4)[names(df4) == "name"] <- "period"
+
+# combine the two data frames
+df_test2 <- rbind(df4, df3b)
+
+
+
+ggplot(df_test2, aes(value, group = spp_name)) + geom_histogram(bins = 14)  + 
+  facet_grid(period ~ Difference ) +
+  #facet_wrap(~ Difference) +
+  labs(x = "Score", y = "Species") +
+   #    title ="Figure 4: Mean scores and unanimity scores by time period") +
   theme(legend.key = element_rect(fill = "white", color = NA)) +
   theme(panel.background=element_rect(fill="white", colour="black")) +
   theme(legend.position="none") +
   scale_fill_hue(c=45, l=80) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
-  theme(text = element_text(size = 12))  
+  theme(text = element_text(size = 14))  
 ```
 
 

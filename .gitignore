@@ -35,7 +35,7 @@ ExOpVis_files/*
 .RData
 
 # docx files
-.docx
+*.docx
 
 # User-specific files
 .Ruserdata
