@@ -34,6 +34,9 @@ ExOpVis_files/*
 # Session Data files
 .RData
 
+# docx files
+.docx
+
 # User-specific files
 .Ruserdata
 
