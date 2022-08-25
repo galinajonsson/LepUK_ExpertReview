@@ -34,12 +34,17 @@ We will use the answers from the questionnaire to answer/explore the following h
     + If true, we expect that across participants, mean scores for all 52 species and both time periods is zero or lower (i.e., average scores are no better than ‘Neither agree nor disagree’) with high unanimity.   
     + If true, we also expect that the mean scores and the unanimity scores across participants show no significant difference between the 52 species, not between the two time periods.  
     + 'Prescription': re-formulate model or abort mission.   
-3. The model formulation accurately estimates occupancy for the later time period (1976-2016), but fails to do so for the early time period (1900-1976). 
-    + If true, we expect that across participants, mean scores for all 52 species and both time periods to be zero or lower (i.e., meaning that the participants average score was no better than ‘Neither agree nor disagree’)  
-4. Some species are hard to model.  
-    + If true, we expect that across participants, mean scores for all 52 species and both time periods to be zero or lower (i.e., meaning that the participants average score was no better than ‘Neither agree nor disagree’)  
-5. Some species are hard to model in the early time period (1900-1976)  
-6. Some species are hard to model in the later time period (1976-2016)      
+2. The model formulation accurately estimates occupancy for the later time period (1976-2016), but fails to do so for the early time period (1900-1976). 
+    + If true, we expect that across participants, mean scores across all 52 species for the early time period is zero or lower (i.e., no better than ‘Neither agree nor disagree’), while mean scores for the later time period is zero or lower. Specifically, we expect that for each of the 52 individual species, the distance between mean scores across participants is lower for the early compared to the late time period.         
+    + If true, we also expect that the mean scores and the unanimity scores across participants show no significant difference between the 52 species.  
+    + 'Prescription': re-formulate model or do not use for early time period.   
+3. The model formulation accurately estimates occupancy for the early time period, but fails to do so for the late time period. 
+   + Like point 2 but 'reverse'
+4. The model formulation fails to produce 'accurate/good' outputs for some species, i.e., some species are just hard to model.  
+    + If true, we expect that across participants and time periods, mean scores for some, but not all, species is zero or lower (i.e., meaning that the participants average score was no better than ‘Neither agree nor disagree’). Specifically, we expect that the same individual species score poorly OR well (i.e, less than or greater than zero, respectively) for both time periods.
+    + If true, we expect that the distance between mean scores across participants for the two time periods is low across all species. 
+4. Some species are hard to model in the early time period (1900-1976)  
+5. Some species are hard to model in the later time period (1976-2016)      
 
 
 <br />
@@ -131,26 +136,9 @@ require(tidyr)
 require(dplyr)
 require(ggplot2)
 
-df2 <- data.frame(ID = as.character(c("01", "02", "03", "04", "05", 
-                                      "06", "07", "08", "09", "10")),
-                  Mean_all = as.numeric(rep(NA, 10)),
-                  Variance_all = as.numeric(rep(NA, 10)),
-                  Mean_q1 = as.numeric(rep(NA, 10)),
-                  Variance_q1 = as.numeric(rep(NA, 10)),
-                  Mean_q2 = as.numeric(rep(NA, 10)),
-                  Variance_q2 = as.numeric(rep(NA, 10)))
+### Subset and summarise response data
+df2 <- as.data.frame(na.omit(df[, c("ID", "name", "value")]) %>% group_by(ID, name) %>% summarise(Mean = mean(value), Variance = (var(value))))
 
-for(i in c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10")){
-  temp <- na.omit(subset(df[, c("ID", "name", "value")], ID == paste0(i)))
-  df2[df2$ID == paste0(i), "Mean_all"] <- mean(as.numeric(temp$value))
-  df2[df2$ID == paste0(i), "Variance_all"] <- var(as.numeric(temp$value))
-  df2[df2$ID == paste0(i), "Mean_q1"] <- mean(as.numeric(temp[temp$name == "q1",]$value))
-  df2[df2$ID == paste0(i), "Variance_q1"] <- var(as.numeric(temp[temp$name == "q1",]$value))
-  df2[df2$ID == paste0(i), "Mean_q2"] <- mean(as.numeric(temp[temp$name == "q2",]$value))
-  df2[df2$ID == paste0(i), "Variance_q2"] <- var(as.numeric(temp[temp$name == "q2",]$value))
-}
-
-#df3 <- as.data.frame(na.omit(df[, c("ID", "name", "value")]) %>% group_by(spp_name, name, HS_WCS) %>% summarise(Mean = mean(value), Unanimity = (1 - (var(value)))))
 
 # Define colour blind friendly palette
 cbPalette <- c("#9E0142", "#D53E4F", "#F46D43", "#FDAE61", "#FEE08B", "#E6F598", "#ABDDA4", "#66C2A5", "#3288BD", "#5E4FA2")
@@ -161,23 +149,22 @@ cbPalette <- c("#000000",  # "#999999",
 
 
 ### Graph
-ggplot(df2, aes(Mean_all, Variance_all), by = spp_name) +
-  geom_point(aes(Mean_all, Variance_all, colour=ID, shape="1900-2016"), size =3) +
-  geom_point(aes(Mean_q1, Variance_q1, colour=ID, shape="Pre-1976"), size =3.5) +
-  geom_point(aes(Mean_q2, Variance_q2, colour=ID, shape="Post-1976"), size =4.3) +
-  scale_color_manual(values=cbPalette) +
-  scale_shape_manual(name="",
-      values=c("1900-2016"=19, "Pre-1976"=17, "Post-1976"=18)) +
+ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
+  geom_line(aes(Mean, Variance, group = ID), df2, color="grey") + # Line between same species' time periods
+  geom_point(aes(Mean, Variance, group = name, shape=name, colour=ID), 
+             df2, size=3.5, position = "jitter") + 
+  scale_shape_manual(name="Time Period", values=c(17,19),
+                     labels = c("1900-1976", "1976-2016")) +
+  scale_colour_manual(name="Participant ID", values=cbPalette) +
   labs(x = "Mean",
-       y = "Variance",
-       color = "Participant ID", 
-       title ="Figure 1: Mean scores against variance per participant",
-       subtitle = "Summarised across species for both time periods separately and combined") +
+       y = "Variance") +
+       #title ="Figure 1: Mean scores against variance per participant",
+       #subtitle = "Summarised across species for both time periods separately and combined") +
   theme(legend.key = element_rect(fill = "white", colour = NA)) +
   theme(panel.background = element_rect(fill = "white", colour = "black")) +
   guides(shape = guide_legend(order=1),
          colour = guide_legend(order=2)) +
-  theme(text = element_text(size = 12))  
+  theme(text = element_text(size = 14))
 ```
 
 ```{r figure2, eval=TRUE, echo=FALSE, cache=TRUE, warning=FALSE, message=FALSE}
@@ -750,45 +737,161 @@ The plots show the standardized residuals (or Pearson’s residuals) versus fitt
 <br/>
 
 
+
+
 ## Principal Component Analysis
 
-```{r pca-temp, message=FALSE, eval=TRUE, echo=TRUE}
+
+
+```{r format-data2, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
+########################################################
+###### Not sure why the PCA struggles to knit - will reload data ###########
+########################################################
 # Load required package(s)
 require(tidyr)
-require("vegan")
-require("dplyr")
+require(dplyr)
+
+### Read first participant results
+ex1b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp01/expertData__2022-03-22_app01.csv")
+# Add participant ID number
+ex1b$ID <- rep(1, 52)
+dfb <- ex1b %>% pivot_longer(cols = starts_with("q"))
+
+### Second participant results
+ex2b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp02IK/expertData__2022-04-01_app02.csv")
+ex2b$ID <- rep(2, 52)
+dfb <- rbind(dfb, (ex2b %>% pivot_longer(cols = starts_with("q"))))
+### Third participant results
+ex3b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp03/expertData__2022-04-01_app03.csv")
+ex3b$ID <- rep(3, 52)
+dfb <- rbind(dfb, (ex3b %>% pivot_longer(cols = starts_with("q"))))
+### Fourth participant results
+ex4b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp04/expertData__2022-02-16_app04.csv")
+ex4b$ID <- rep(4, 52)
+dfb <- rbind(dfb, (ex4b %>% pivot_longer(cols = starts_with("q"))))
+### Sixth participant results
+ex6b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp06/expertData__2022-04-06_app06.csv")
+ex6b$ID <- rep(5, 52)
+dfb <- rbind(dfb, (ex6b %>% pivot_longer(cols = starts_with("q"))))
+### Eighth participant results
+ex8b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp08/expertData__2022-04-04_app08.csv")
+ex8b$ID <- rep(6, 52)
+dfb <- rbind(dfb, (ex8b %>% pivot_longer(cols = starts_with("q"))))
+### Ninth participant results
+ex09b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp09/expertData__2022-04-17_app09.csv")
+ex09b$ID <- rep(7, 52)
+dfb <- rbind(dfb, (ex09b %>% pivot_longer(cols = starts_with("q"))))
+### Tenth participant results
+ex10b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp10/expertData__2022-04-08_app10.csv")
+ex10b$ID <- rep(8, 52)
+dfb <- rbind(dfb, (ex10b %>% pivot_longer(cols = starts_with("q"))))
+### Twelfth participant results
+ex12b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp12/expertData__2022-04-01_app12.csv")
+ex12b$ID <- rep(9, 52)
+dfb <- rbind(dfb, (ex12b %>% pivot_longer(cols = starts_with("q"))))
+### Thirteenth participant results
+ex13b <- read.csv("../app_ExpertReviewForm/ParticipantApps/appLepTrendExOp13/expertData__2022-04-08_app13.csv")
+ex13b$ID <- rep(10, 52)
+dfb <- rbind(dfb, (ex13b %>% pivot_longer(cols = starts_with("q"))))
+
+### re-code responses from -2 (strongly disagree) to +2 (strongly agree)
+dfb$value <- dfb$value-3
+
+### Enter whether species are HS or WCS
+MSI_lookup <- read.csv("../data/auxiliaryData/MSI_lookup.csv")
+dfb <- merge(dfb, MSI_lookup[, c("CommonName", "HS_WCS")], by.x = "com_name", by.y = "CommonName", all.x = TRUE, all.y = FALSE)
+# manually enter for species with differently spelled names
+dfb[dfb$com_name == "Brimstone", "HS_WCS"] <- "WCS"
+dfb[dfb$com_name == "Chalk Hill Blue", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Green-veined White", "HS_WCS"] <- "WCS"
+dfb[dfb$com_name == "Large Heath", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Orange-tip", "HS_WCS"] <- "WCS"
+dfb[dfb$com_name == "Pearl-bordered Fritillary", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Silver-spotted Skipper", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Silver-studded Blue", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Silver-washed Fritillary", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Small Mountain Ringlet", "HS_WCS"] <- "HS"
+dfb[dfb$com_name == "Small Pearl-bordered Fritillary", "HS_WCS"] <- "HS"
+dfb[dfb$bcom_name == "White-letter Hairstreak", "HS_WCS"] <- "WCS"
+```
+
+
+
+```{r pca-temp, message=FALSE, warning=FALSE, eval=TRUE, echo=TRUE}
+# Load required package(s)
+require("tidyr"); require("dplyr"); require("vegan"); require("ggplot2"); require("ggfortify"); require("cluster"); require("factoextra"); require("ggpubr")
+
 # First we give the raw data frame more informative names
-df_pca <- na.omit(df[, c("rand_id", "spp_name", "ID", "name", "value")])
-colnames(df_pca) <- c("spp_id", "spp_name", "period", "participantID", "score")
+df_pca <- na.omit(dfb[, c("rand_id", "spp_name", "ID", "name", "value")])
+colnames(df_pca) <- c("spp_id", "spp_name", "participantID", "period", "score")
 
 # new response column based on multiple conditions:
 df_pca <- df_pca %>% mutate(period2 = 
            case_when(period == "q1" ~ 1, 
                      period == "q2" ~ 2))
-# new response column based on multiple conditions:
-df_pca <- df_pca %>% mutate(participantID2 = 
-           case_when(participantID == "01" ~ 1, 
-                     participantID == "02" ~ 2,
-                     participantID == "03" ~ 3, 
-                     participantID == "04" ~ 4,
-                     participantID == "05" ~ 5, 
-                     participantID == "06" ~ 6,
-                     participantID == "07" ~ 7, 
-                     participantID == "08" ~ 8,
-                     participantID == "09" ~ 9, 
-                     participantID == "10" ~ 10))
 
-# Define metrics
-metrics <- c("spp_id", "score", "period2", "participantID2")
-#metric <- c("rand_id","value")
+# Define metrics to use
+metrics <- c("spp_id", "score", "period2", "participantID")
+
+# Centre and scale metrics
+mypr <- prcomp(df_pca[ , metrics], center = T, scale = T)
+summary(mypr)
+# As an be seen in the elbow method, the first three components are explained as 83% of variance whereas 85% of variance is needed for PCA analysis so we'll need 4 clusters
+
+var <- get_pca_var(mypr)
+# See contribution of variables
+head(var$cos2, 4)
+### The most contributing variables in dimension 1 is .score and period2, whilst the most contributiing for in dimension 2&3 are spp_id and participantID
 
 
-# Centre and scale temporal metrics
+
+fviz_pca_biplot(mypr, 
+                # Fill individuals by groups
+                geom.ind = as.factor("point"),
+                addEllipses = TRUE, label = "var",
+                pointshape = 21,
+                pointsize = 2.5,
+                fill.ind = as.factor(df_pca$period2),
+                col.ind = as.factor("black"),
+                # Color variable by groups
+                col.var = factor(c("spp_id", "score", "period2", "participantID")),
+                
+                
+                legend.title = list(fill = "Period", color = "Clusters"),
+                repel = TRUE        # Avoid label overplotting
+)+ggpubr::fill_palette("jco")+      # Indiviual fill color
+  ggpubr::color_palette("npg")      # Variable colors
+
+
+
+
+
+
+
+# select PCA values and create a new dataframe
+comp <- data.frame(mypr$x[,1:4])
+# Cluster number by euclidian distance metric
+fviz_nbclust(comp, kmeans, method = "silhouette") + theme_classic()
+
+k <- kmeans(comp, 8, nstart=25, iter.max=1000)
+library(RColorBrewer)
+palette(alpha(brewer.pal(9,'Set1'), 0.5))
+plot(comp, col=k$clust, pch=16)
+
+summary(k)
+
+table(k$cluster)
+
+sile<-silhouette(k$cluster, dist(comp))
+
+fviz_silhouette(sile)
+
+
+# Centre and scale metrics
 df_pca1 <- decostand(df_pca[ , metrics], "stand")
 
 # Run PCA
 temp.pca2 <- prcomp(df_pca1)
-
 tem.km <- cascadeKM(df_pca1, # data
                     inf.gr = 2, # minimum number of groups
                     sup.gr = 5, # maximum number of groups
@@ -797,21 +900,112 @@ tem.km <- cascadeKM(df_pca1, # data
 ssi.best <- as.numeric(which.max(tem.km$results[2,])) # Find optimal number of clusters
 # 4
 
-require(ggplot2)
-library(ggfortify)
+### Graph
 autoplot(kmeans(df_pca1, 4), data = df_pca1,
          loadings = TRUE, loadings.colour = 'black',
-         loadings.label = TRUE, loadings.label.size = 3, shape = df_pca$period2)
+         loadings.label = TRUE, loadings.label.size = 3, shape = df_pca$period2) +
+  labs(title ="Figure PCA.1: species, score, time period & participant") + 
+  scale_shape_manual("Period", values=c(18, 19),
+                     labels = c("Pre-1976", "Post-1976")) +
+  theme(text = element_text(size = 12))   
 
 # Find average silhouette width
-require(cluster)
 km.res <- kmeans(df_pca1, 4)
 ss <- silhouette(km.res$cluster, dist(df_pca1))
-#mean(ss[, 1]) # 0.3381001
+mean(ss[, 3]) # 0.2541715
+```
+<br/>
+<br/>
+
+**General trends**
+
+* The simple structure index revealed that the optimal number of k-means clusters is 4 when including species ID, score, time period & participant ID as metrics (Figure PCA.1.), but clusters were poorly supported by the data according to the average silhouette widths (0.254). 
+* The vectors for time period and score are practically overlapping, indicating that they are highly positively correlated. Moreover, they strongly influence PC1.  
+* Similarly, participant and species are positively correlated, but not to the high degree we see for time period and score, and they influence PC2.  
+* On the other hand, time period and score are not correlated with participant and species.  
+
+
+
+
+**Look into further**
+
+* Center and scale metrics as "stand" -> correct? 
+
+<br/>
+<br/>
+```{r pca-tempb, message=FALSE, warning=FALSE, eval=TRUE, echo=FALSE}
+# Load required package(s)
+require("tidyr"); require("dplyr"); require("vegan"); require("ggplot2"); require("ggfortify"); require("cluster")
+
+# Define metrics to use
+metrics2 <- c("spp_id", "score", "participantID")
+
+
+# Centre and scale metrics
+mypr2 <- prcomp(df_pca[ , metrics2], center = T, scale = T)
+summary(mypr2)
+# As it can be seen in the elbow method, the first three components are explained as 83% of variance whereas 85% of variance is needed for PCA analysis so we'll need 4 clusters
+
+var2 <- get_pca_var(mypr2)
+# See contribution of variables
+head(var2$cos2, 3)
+
+
+
+fviz_pca_biplot(mypr2, 
+                # Fill individuals by groups
+                geom.ind = as.factor("point"),
+                addEllipses = TRUE, label = "var",
+                pointshape = 21,
+                pointsize = 2.5,
+                fill.ind = as.factor(df_pca$period2),
+                col.ind = as.factor("black"),
+                # Color variable by groups
+                col.var = factor(c("spp_id", "score", "participantID")),
+                
+                
+                legend.title = list(fill = "Period", color = "Clusters"),
+                repel = TRUE        # Avoid label overplotting
+)+ggpubr::fill_palette("jco")+      # Indiviual fill color
+  ggpubr::color_palette("npg")      # Variable colors
+
+
+
+# Centre and scale metrics
+df_pca2 <- decostand(df_pca[ , metrics2], "stand")
+
+# Run PCA
+temp.pca3 <- prcomp(df_pca2)
+tem.km2 <- cascadeKM(df_pca2, # data
+                    inf.gr = 2, # minimum number of groups
+                    sup.gr = 5, # maximum number of groups
+                    iter = 100, # iterations
+                    criterion = "ssi") # Simple Structure Index to identify the optimal number of clusters
+ssi.best <- as.numeric(which.max(tem.km2$results[2,])) # Find optimal number of clusters
+# 4
+
+### Graph
+autoplot(kmeans(df_pca2, 3), data = df_pca2,
+         loadings = TRUE, loadings.colour = 'black',
+         loadings.label = TRUE, loadings.label.size = 3, shape = df_pca$period2) +
+  labs(title ="Figure PCA.2: species, score & participant") + 
+  scale_shape_manual(values=c(20, 21)) + #,
+                   #  labels = c("Pre-1976", "Post-1976")) +
+  theme(text = element_text(size = 12))   
+
+# Find average silhouette width
+km.res2 <- kmeans(df_pca2, 2)
+ss2 <- silhouette(km.res2$cluster, dist(df_pca2))
+mean(ss2[, 3])# 0.2517791
 ```
 
+<br/>
+<br/>
 
 
+
+<br/>
+<br/>
 
 ## Network Analysis
 
