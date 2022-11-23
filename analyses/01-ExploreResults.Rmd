@@ -153,7 +153,7 @@ ggplot() + # Empty ggplot function to allow use of different data sets for plott
   geom_line(aes(Mean, Variance, group = ID), df2, color="grey") + # Line between same species' time periods
   geom_point(aes(Mean, Variance, shape=name, size=name, colour=ID), 
              df2, size=4.5, position = "jitter") + 
-  scale_shape_manual(name="\n  Time Period", 
+  scale_shape_manual(name="\nTime Period", 
                      values=c(18,20), 
                      labels = c("1900-1976", "1976-2016")) +
   scale_colour_manual(name="Participant ID", values=cbPalette) +
@@ -169,6 +169,8 @@ ggplot() + # Empty ggplot function to allow use of different data sets for plott
     guides(colour = guide_legend(override.aes = list(shape = c(15,15,15,15,15,15,15,15,15,15),
                                                      size = 3.7))) + 
   theme(text = element_text(size = 14))
+
+#ggsave("../plots/Participant_meanVar.png",width=7,height=4)
 ```
 
 ```{r figure2, eval=TRUE, echo=FALSE, cache=TRUE, warning=FALSE, message=FALSE}
@@ -176,6 +178,7 @@ require("dplyr")
 require("RColorBrewer")
 require("R.utils")
 require("ggplot2")
+require("wesanderson")
 
 # new response column based on multiple conditions:
 df_plot <- df %>% mutate(response = 
@@ -216,20 +219,31 @@ df_plot_lo <- df_plot_hi_lo %>%
 	mutate(response = factor(response, levels = c("Strongly disagree", "Disagree", "midlow")))
 
 # Use RColorBrewer to store a preset diverging colour palette as a vector of colour codes
-legend_pal <- brewer.pal(name = "RdBu", n = 5)
+#legend_pal <- brewer.pal(name = "RdBu", n = 5)
 # Duplicate the middle value since "Neither agree nor disagree" is two groups: "midhigh" and "midlow"
-legend_pal <- insert(legend_pal, ats = 3, legend_pal[3])
+#legend_pal <- insert(legend_pal, ats = 3, legend_pal[3])
 # Replace the ugly white colour for "Neither agree nor disagree" with a pleasant dishwater grey
-legend_pal <- gsub("#F7F7F7", "#9C9C9C", legend_pal)
+#legend_pal <- gsub("#F7F7F7", "#9C9C9C", legend_pal)
 # Assign names to the vector based on the colours we want for each group
-names(legend_pal) <- c('Strongly disagree', 'Disagree', 'midhigh', 'midlow', "Agree", "Strongly agree")
+#names(legend_pal) <- c('Strongly disagree', 'Disagree', 'midhigh', 'midlow', "Agree", "Strongly agree")
+
+# Use wesanderson to store a preset diverging colour palette as a vector of colour codes
+mycols <- wes_palette("Zissou1", n=15, type="continuous")[c(12,8,7,5,1)]
+# Duplicate the middle value since "Neither agree nor disagree" is two groups: "midhigh" and "midlow"
+mycols <- insert(mycols, ats = 3, wes_palette("Zissou1", n=10, type="continuous")[c(5)])
+# Replace the ugly white colour for "Neither agree nor disagree" with a pleasant dishwater grey
+mycols <- gsub("#CAC656", "#9C9C9C", mycols)
+mycols <- gsub("#D1C74C", "#9C9C9C", mycols)
+# Assign names to the vector based on the colours we want for each group
+names(mycols) <- c('Strongly disagree', 'Disagree', 'midhigh', 'midlow', "Agree", "Strongly agree")
+
 
 # Plot
 ggplot() +
 	geom_bar(data = df_plot_hi, aes(x = Period, y=perc, fill = response), stat="identity") +
 	geom_bar(data = df_plot_lo, aes(x = Period, y=-perc, fill = response), stat="identity") +
 	geom_hline(yintercept = 0, color =c("black")) +
-	scale_fill_manual(values = legend_pal,
+	scale_fill_manual(values = mycols,
 		breaks = c('Strongly agree', 'Agree', 'midhigh', "Disagree", "Strongly disagree"),
 		labels = c('Strongly agree', 'Agree', 'Neither agree nor disagree', "Disagree", "Strongly disagree")) +
 	coord_flip() +
@@ -239,6 +253,8 @@ ggplot() +
        #title ="Figure 2: Distribution of responses across species and participants") +
 	theme_classic() +
   theme(text = element_text(size = 14)) 
+
+ggsave("../plots/Percentage_scores.png",width=7,height=4)
 ```
 <br/>
 <br/>
@@ -291,6 +307,8 @@ for(i in 1:nrow(constraintLine)){ # For each row, create a vector with ten (10) 
 df3 <- as.data.frame(na.omit(df[, c("spp_name", "name", "value", "HS_WCS")]) %>% group_by(spp_name, name, HS_WCS) %>% summarise(Mean = mean(value), Unanimity = (1 - (var(value)))))
 
 cols <- c("#E69F00", "#009E73")
+#cols <- c("#E69F00", "#74A089")
+
 
 ### Graph
 ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of different data sets for plotting 
@@ -307,6 +325,35 @@ ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of diff
   theme(panel.background=element_rect(fill="white", colour="black")) +
   coord_cartesian(ylim=c(-1.6, 1)) +
   theme(text = element_text(size = 14))   
+
+#ggsave("../plots/Scores_VS_unanimity.png",width=7,height=4)
+
+########################################################
+### Replot this with cluster 2 species in different colou (for other project)
+# Define species names
+#clust2 <- c("Aglais.urticae", "Anthocharis.cardamines",
+#            "Coenonympha.pamphilus", "Lycaena.phlaeas",
+#            "Maniola.jurtina", "Ochlodes.sylvanus", 
+#            "Pieris.napi", "Pieris.rapae",
+#            "Polyommatus.icarus", "Thymelicus.sylvestris")
+# Denote these species in data frame
+#df3[df3$spp_name%in% clust2, "name"] <- "clust2"
+# Define colours and labels
+#cols <- c("#800000FF", "#E69F00", "#009E73")
+#mylabels <- c("Cluster 2", "1900-1976", "1976-2016")
+# Plot
+#ggplot(df3, aes(Mean, Unanimity)) + 
+#  geom_line(aes(group = spp_name), color="grey") + 
+#  geom_jitter(width = 0.04, height = 0.04, aes(group = name, shape=name, colour=name), size=3.5) + 
+#  geom_line(aes(mean, unanimity), constraintLine) + 
+#  scale_shape_manual("", values=c(19, 15, 17), labels = mylabels) +
+#  scale_colour_manual("", values=cols, labels = mylabels) +
+#  labs(x = "Mean Score", y = "Unanimity") +
+#  theme(legend.key = element_rect(fill = "white", color = NA)) +
+#  theme(panel.background=element_rect(fill="white", colour="black")) +
+#  coord_cartesian(ylim=c(-1.6, 1)) +
+#  theme(text = element_text(size = 14)) 
+#ggsave("../plots/ForTrends_leps_Cluster2.png",width=7,height=4)
 ```
 <br/>
 <br/>
