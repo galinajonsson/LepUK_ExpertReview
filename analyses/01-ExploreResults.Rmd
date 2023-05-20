@@ -483,9 +483,40 @@ names(df4)[names(df4) == "name"] <- "period"
 # combine the two data frames
 df_test2 <- rbind(df4, df3b)
 
+# add colour grouing
+df_test2$scoregroup <- "pos"
+df_test2$scoregroup[df_test2$spp_name=="Aglais.urticae"] <- "badbad"
+df_test2$scoregroup[df_test2$spp_name=="Pieris.napi"] <- "badbad"
+df_test2$scoregroup[df_test2$spp_name=="Pieris.rapae"] <- "badbad"
+df_test2$scoregroup[df_test2$spp_name=="Polyommatus.icarus"] <- "badbad"
+df_test2$scoregroup[df_test2$spp_name=="Maniola.jurtina"] <- "badbad"
+
+df_test2$scoregroup[df_test2$spp_name=="Lycaena.phlaeas"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Polyommatus.coridon"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Plebejus.argus"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Euphydryas.aurinia"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Thymelicus.sylvestris"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Aglais.io"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Coenonympha.pamphilus"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Hipparchia.semele"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Ochlodes.sylvanus"] <- "bad"
+df_test2$scoregroup[df_test2$spp_name=="Satyrium.w-album"] <- "bad"
 
 
 ggplot(df_test2, aes(value, group = spp_name)) + geom_histogram(bins = 14)  + 
+  facet_grid(period ~ Difference ) +
+  #facet_wrap(~ Difference) +
+  labs(x = "Score", y = "Species") +
+   #    title ="Figure 4: Mean scores and unanimity scores by time period") +
+  theme(legend.key = element_rect(fill = "white", color = NA)) +
+  theme(panel.background=element_rect(fill="white", colour="black")) +
+  theme(legend.position="none") +
+  scale_fill_hue(c=45, l=80) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, NA)) +
+  theme(text = element_text(size = 14))  
+
+
+ggplot(df_test2, aes(value, group = spp_name, fill= scoregroup)) + geom_histogram(bins = 14)  + 
   facet_grid(period ~ Difference ) +
   #facet_wrap(~ Difference) +
   labs(x = "Score", y = "Species") +
@@ -635,6 +666,31 @@ The following six species:time period combinations stand out:
     + -2 'Strongly disagree' (ID04) <br/>
 
 Three of six 'extremes' are driven by participant ID 09, who stands out as scoring lower than others across all questions (Figure 1) and we therefore expect these to be 'genuine'. The remaining three 'extremes' are responses by three separate participants (04, 05 and 10), neither of which clearly stands out from participants (Figure 1). To investigate whether these may be genuine mistakes, we use a modelling approach (see next sub-section).
+
+<br />
+
+#### Visualise all scores as box plots
+
+```{r allscores-boxplot, message=FALSE, eval=TRUE, echo=TRUE, cache=TRUE}
+require("tidyverse")
+
+dfAllAscores <- df[,c("spp_name", "name", "value")]
+names(dfAllAscores)[names(dfAllAscores) == "name"] <- "Period"
+dfAllAscores[dfAllAscores$Period=="q1", "Period"] <- "1900-1976"
+dfAllAscores[dfAllAscores$Period=="q2", "Period"] <- "1976-2016"
+
+dfAllAscores$spp_name <- gsub(".", " ", dfAllAscores$spp_name, fixed=TRUE)
+
+# Box plot
+ggplot(dfAllAscores, aes(x=fct_rev(spp_name), y=value)) + 
+  geom_boxplot() + facet_grid(. ~ Period) + coord_flip() + 
+  labs(x = "Species", y = "Score") + theme_light() +
+  theme(strip.text.x = element_text(color="black", face="bold")) +
+  theme(axis.text.y = element_text(face = "italic"))
+
+#ggsave("../plots/AllScoreBoxPlot.png",width=7,height=9)
+```
+
 
 <br />
 <br />
