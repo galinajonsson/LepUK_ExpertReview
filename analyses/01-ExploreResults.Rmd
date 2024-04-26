@@ -149,7 +149,7 @@ cbPalette <- c(#"#000000",  # "#999999",
 
 
 ### Graph
-ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
+p <- ggplot() + # Empty ggplot function to allow use of different data sets for plotting 
   geom_line(aes(Mean, Variance, group = ID), df2, color="grey") + # Line between same species' time periods
   geom_point(aes(Mean, Variance, shape=name, size=name, colour=ID), 
              df2, size=4.5, position = "jitter") + 
@@ -157,8 +157,9 @@ ggplot() + # Empty ggplot function to allow use of different data sets for plott
                      values=c(18,20), 
                      labels = c("1900-1976", "1976-2016")) +
   scale_colour_manual(name="Participant ID", values=cbPalette) +
-  labs(x = "Mean",
-       y = "Variance") +
+  labs(x = "Mean Score",
+       y = "
+       Variance") +
        #title ="Figure 1: Mean scores against variance per participant",
        #subtitle = "Summarised across species for both time periods separately and combined") +
   theme(legend.key = element_rect(fill = "white", colour = NA)) +
@@ -169,6 +170,7 @@ ggplot() + # Empty ggplot function to allow use of different data sets for plott
     guides(colour = guide_legend(override.aes = list(shape = c(15,15,15,15,15,15,15,15,15,15),
                                                      size = 3.7))) + 
   theme(text = element_text(size = 14))
+p
 
 #ggsave("../plots/Participant_meanVar.png",width=7,height=4)
 ```
@@ -311,20 +313,23 @@ cols <- c("#E69F00", "#009E73")
 
 
 ### Graph
-ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of different data sets for plotting 
+q <- ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of different data sets for plotting 
   geom_line(aes(group = spp_name), color="grey") + # Line between same species' time periods
   geom_jitter(width = 0.04, height = 0.04, aes(group = name, shape=name, colour=name), size=3.5) + # use jitter over geom_points to reveal overlapping points
   geom_line(aes(mean, unanimity), constraintLine) + # Add constraint line
-  scale_shape_manual("Time Period", values=c(15, 17),
+  scale_shape_manual("Time Period", #values=c(15, 17),
+                     values=c(18,20),
                      labels = c("1900-1976", "1976-2016")) +
   scale_colour_manual("Time Period", values=cols,
                       labels = c("1900-1976", "1976-2016")) +
-  labs(x = "Mean Score", y = "Unanimity") +
+  labs(x = "Mean Score", y = "
+       Unanimity") +
   #     title ="Figure 3: Mean scores against unanimity (1- variance)") +
   theme(legend.key = element_rect(fill = "white", color = NA)) +
   theme(panel.background=element_rect(fill="white", colour="black")) +
   coord_cartesian(ylim=c(-1.6, 1)) +
   theme(text = element_text(size = 14))   
+q
 
 #ggsave("../plots/Scores_VS_unanimity.png",width=7,height=4)
 
@@ -354,6 +359,15 @@ ggplot(df3, aes(Mean, Unanimity)) + # Empty ggplot function to allow use of diff
 #  coord_cartesian(ylim=c(-1.6, 1)) +
 #  theme(text = element_text(size = 14)) 
 #ggsave("../plots/ForTrends_leps_Cluster2.png",width=7,height=4)
+```
+<br/>
+<br/>
+```{r msfigure4, eval=TRUE, echo=FALSE, cache=TRUE, warning=FALSE, message=FALSE}
+library(ggpubr)
+ggarrange(p, q, 
+          labels = c("(A)", "(B)"),
+          ncol = 1, nrow = 2)
+#ggsave("../plots/msFigure4.png",width=7,height=8)
 ```
 <br/>
 <br/>
